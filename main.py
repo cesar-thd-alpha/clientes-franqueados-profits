@@ -196,4 +196,4 @@ clientes.reset_index(drop=True, inplace=True)
 
 engine = get_engine()
 
-dt.to_sql("clientes_franqueados_profits", engine, if_exists="replace", index=False)
+clientes.to_sql("clientes_franqueados_profits", engine, if_exists="replace", index=False)
