@@ -66,6 +66,22 @@ for profit, sheet_id in SHEETS.items():
     df = df[(df["Cliente"] != "") & (df["Franquia"] != "")]
 
     ####################################################
+    # LIMPEZA DOS VALORES
+    ####################################################
+
+    # Monetários
+    for coluna in ["Valor Contrato", "Valor Mensal"]:
+
+        df[coluna] = (
+            df[coluna]
+            .astype(str)
+            .str.replace("R$", "", regex=False)
+            .str.strip()
+        )
+
+        df[coluna] = pd.to_numeric(df[coluna], errors="coerce")
+
+    ####################################################
     # DATAS
     ####################################################
 
