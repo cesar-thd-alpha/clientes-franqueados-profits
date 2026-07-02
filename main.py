@@ -13,20 +13,16 @@ SHEETS = {
     "PAULO": "1NKMj_uhz7g7DOvY2gKOMapCwkWTSEGCb1gB8qVoq89U",
 }
 
+
 def get_engine():
 
     DATABASE_URL = os.getenv("DATABASE_URL")
 
-    return create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True
-    )
+    return create_engine(DATABASE_URL, pool_pre_ping=True)
 
 
 def get_url(sheet_id, gid):
-    return (
-        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx&gid={gid}"
-    )
+    return f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx&gid={gid}"
 
 
 columns_rename = {
@@ -67,10 +63,7 @@ for profit, sheet_id in SHEETS.items():
     df["Cliente"] = df["Cliente"].fillna("").astype(str).str.strip()
     df["Franquia"] = df["Franquia"].fillna("").astype(str).str.strip()
 
-    df = df[
-        (df["Cliente"] != "")
-        & (df["Franquia"] != "")
-    ]
+    df = df[(df["Cliente"] != "") & (df["Franquia"] != "")]
 
     ####################################################
     # LIMPEZA DOS VALORES
@@ -88,63 +81,45 @@ for profit, sheet_id in SHEETS.items():
             .str.strip()
         )
 
-        df[coluna] = pd.to_numeric(
-            df[coluna],
-            errors="coerce"
-        )
+        df[coluna] = pd.to_numeric(df[coluna], errors="coerce")
 
     ####################################################
     # DATAS
     ####################################################
 
+    MESES = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+
     for coluna in ["Início Contrato", "Fim Contrato"]:
 
-        df[coluna] = (
-            df[coluna]
-            .replace(
-                [
-                    "#VALOR!",
-                    "Recorrente",
-                    "",
-                    "nan"
-                ],
-                np.nan
-            )
-        )
+        df[coluna] = df[coluna].replace(["#VALOR!", "Recorrente", "", "nan"], np.nan)
 
-        df[coluna] = pd.to_datetime(
-            df[coluna],
-            errors="coerce",
-            dayfirst=True
-        )
+        df[coluna] = pd.to_datetime(df[coluna], errors="coerce", dayfirst=True)
 
     ####################################################
     # VENCIMENTO
     ####################################################
 
-    df["Vencimento"] = (
-        df["Vencimento"]
-        .replace(
-            [
-                "Recorrente",
-                "#VALOR!",
-                "",
-                "nan"
-            ],
-            np.nan
-        )
+    df["Vencimento"] = df["Vencimento"].replace(
+        ["Recorrente", "#VALOR!", "", "nan"], np.nan
     )
 
-    df["Vencimento"] = pd.to_numeric(
-        df["Vencimento"],
-        errors="coerce"
-    )
+    df["Vencimento"] = pd.to_numeric(df["Vencimento"], errors="coerce")
 
     # Corrige datas inválidas que aparecem como -46205
-    df.loc[
-        df["Vencimento"] < -1000,
-        "Vencimento"
-    ] = np.nan
+    df.loc[df["Vencimento"] < -1000, "Vencimento"] = np.nan
 
     ####################################################
     # COLUNAS AUXILIARES
@@ -152,44 +127,21 @@ for profit, sheet_id in SHEETS.items():
 
     hoje = pd.Timestamp.today().normalize()
 
-    df["Cliente Ativo"] = (
-        df["Status"]
-        .astype(str)
-        .str.upper()
-        .eq("ATIVO")
-    )
+    df["Cliente Ativo"] = df["Status"].astype(str).str.upper().eq("ATIVO")
 
-    df["Cliente Churn"] = (
-        df["Status"]
-        .astype(str)
-        .str.upper()
-        .eq("CHURN")
-    )
+    df["Cliente Churn"] = df["Status"].astype(str).str.upper().eq("CHURN")
 
-    df["Cliente Pausado"] = (
-        df["Status"]
-        .astype(str)
-        .str.upper()
-        .eq("PAUSADO")
-    )
+    df["Cliente Pausado"] = df["Status"].astype(str).str.upper().eq("PAUSADO")
 
     df["Ano"] = df["Início Contrato"].dt.year
 
     df["Mês"] = df["Início Contrato"].dt.month
 
-    df["Nome Mês"] = df["Início Contrato"].dt.month_name(locale="pt_BR")
+    df["Nome Mês"] = df["Mês"].map(MESES)
 
-    df["AnoMês"] = (
-        df["Início Contrato"]
-        .dt.to_period("M")
-        .astype(str)
-    )
+    df["AnoMês"] = df["Início Contrato"].dt.to_period("M").astype(str)
 
-    df["Meses Contrato"] = (
-        (
-            hoje - df["Início Contrato"]
-        ).dt.days / 30.44
-    ).round(1)
+    df["Meses Contrato"] = ((hoje - df["Início Contrato"]).dt.days / 30.44).round(1)
 
     ####################################################
     # FAIXA DE VENCIMENTO
@@ -228,28 +180,15 @@ for profit, sheet_id in SHEETS.items():
 # DATAFRAME FINAL
 ####################################################
 
-clientes = pd.concat(
-    dfs,
-    ignore_index=True
-)
+clientes = pd.concat(dfs, ignore_index=True)
 
 ####################################################
 # ORDENAÇÃO
 ####################################################
 
-clientes.sort_values(
-    [
-        "Profit",
-        "Franquia",
-        "Cliente"
-    ],
-    inplace=True
-)
+clientes.sort_values(["Profit", "Franquia", "Cliente"], inplace=True)
 
-clientes.reset_index(
-    drop=True,
-    inplace=True
-)
+clientes.reset_index(drop=True, inplace=True)
 
 ####################################################
 # EXPORTAÇÃO
@@ -257,9 +196,4 @@ clientes.reset_index(
 
 engine = get_engine()
 
-dt.to_sql(
-    "clientes_franqueados_profits",
-    engine,
-    if_exists="replace",
-    index=False
-)
+dt.to_sql("clientes_franqueados_profits", engine, if_exists="replace", index=False)
