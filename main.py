@@ -10,7 +10,6 @@ SHEETS = {
     "RICARDO": "1g-7UEZiLS8cgTwlNLNNVXjxLiokevGQ2kzaiybfDQPo",
     "ALEKS": "1-ggf1gOtys8GLEmh5rHSSKODJlE-wXbILDy6Ccfk7eM",
     "TOLEDO": "1BpN71IgdovOiHZlA5x4e5S66nQ9-2zBfDUDhLcrYZcI",
-    "PAULO": "1NKMj_uhz7g7DOvY2gKOMapCwkWTSEGCb1gB8qVoq89U",
 }
 
 
